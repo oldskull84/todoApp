@@ -2,7 +2,7 @@
   <ion-page>
     <ion-header :translucent="true">
       <ion-toolbar>
-        <ion-title>'titleStr'</ion-title>
+        <ion-title>To-Do List</ion-title>
       </ion-toolbar>
     </ion-header>
 
@@ -20,9 +20,14 @@
       </div>
 
       <div id="toDoList">
-        <div :class="{ completed: todo.completed }" v-for="(todo, index) in todos" :key="index">
-          <ion-label @click="completeToDo(todo)">{{ todo.text }}</ion-label>
-        </div>
+        <!-- <div :class="{ completed: todo.completed }" v-for="(todo, index) in todos" :key="index"> -->
+        <!-- <ion-label @click="completeToDo(todo)">{{ todo.text }}</ion-label> -->
+        <ion-item v-for="(todo, index) in todos" :key="index">
+          <ion-label>{{ todo.title }}</ion-label>
+          <ion-checkbox slot="start" @update:modelValue="completeToDo(todo)" :modelValue="todo.isDone">
+          </ion-checkbox>
+        </ion-item>
+        <!-- </div> -->
       </div>
 
       <p v-if="todos.length === 0">Empty list, please add some tasks</p>
@@ -63,10 +68,9 @@
 </template>
 
 <script lang="ts">
-import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, actionSheetController } from '@ionic/vue';
-import { close, checkmarkDone } from 'ionicons/icons'
-import { defineComponent, ref, reactive } from 'vue';
-import { computed } from '@vue/reactivity';
+import { IonContent, IonHeader, IonPage, IonTitle, IonToolbar, IonButton, IonCheckbox } from '@ionic/vue';
+import { defineComponent, reactive, ref, watch } from 'vue';
+import ToDoItem from '@/dto/todo-item';
 
 
 export default defineComponent({
@@ -77,49 +81,63 @@ export default defineComponent({
     IonPage,
     IonTitle,
     IonToolbar,
-    IonButton
+    IonButton,
+    IonCheckbox
   },
   setup() {
-    const newToDo = ref("");
-    const initialLoadData = [
-      {
-        completed: false,
-        text: "Create todo-list functionality"
-      }
+
+    const todoItems = [
+      new ToDoItem("Put away clean clotches"),
+      new ToDoItem("Do the laundry"),
+      new ToDoItem("Hang out clotches to dry"),
+      new ToDoItem("Vacuum"),
+      new ToDoItem("Do the washing up"),
+      new ToDoItem("Mop floors"),
+      new ToDoItem("Take out trash")
     ];
-    let storedToDos;
+
+    function update() {
+      console.log('update');
+    }
+
+    const newToDo = ref(null);
+    const initialLoadData = [...todoItems];
+
+    let storedToDos: Array<ToDoItem>;
     let lstd = localStorage.getItem("todos");
     lstd ? (storedToDos = JSON.parse(lstd))
       : (storedToDos = initialLoadData);
-    const todos = ref(storedToDos);
+    const todos = reactive(storedToDos);
+
     function addToDos() {
-      if (newToDo.value !== "") {
-        todos.value.push({
-          completed: false,
-          text: newToDo.value
-        });
-        newToDo.value = "";
+      if (newToDo.value !== null) {
+        todos.push(new ToDoItem(newToDo.value));
+        newToDo.value = null;
       }
       updateStorage();
     }
     function removeAllToDos() {
-      todos.value.splice(0, todos.value.length);
+      todos.splice(0, todos.length);
       updateStorage();
     }
-    function completeToDo(todo) {
-      console.log(todo);
-      todo.completed = !todo.completed;
+    function completeToDo(todo: ToDoItem) {
+      console.log(todo.title);
+      todo.isDone = !todo.isDone;
       updateStorage();
     }
     function updateStorage() {
-      localStorage.setItem('todos', JSON.stringify(todos.value));
+      localStorage.setItem('todos', JSON.stringify(todos));
     }
+
+    // watch(todos, () => updateStorage());
+
     return {
       completeToDo,
       removeAllToDos,
       addToDos,
       todos,
-      newToDo
+      newToDo,
+      updateStorage,
     }
   }
 
